@@ -48,12 +48,21 @@
     }
 
     function getRedirectUrl() {
+      // LIFF 登入後原始參數會放在 liff.state，需優先從那裡讀取
       const params = new URLSearchParams(location.search);
-      const redirect = params.get("redirect");
+      let redirect = params.get("redirect");
+
+      if (!redirect) {
+        const liffState = params.get("liff.state");
+        if (liffState) {
+          const stateParams = new URLSearchParams(liffState.replace(/^\?/, ""));
+          redirect = stateParams.get("redirect");
+        }
+      }
+
       if (!redirect) return null;
 
       try {
-        // 安全性：只允許 http/https 開頭
         const url = new URL(redirect);
         if (!["http:", "https:"].includes(url.protocol)) return null;
         return url;
