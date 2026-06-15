@@ -15,10 +15,7 @@
       font-family: sans-serif;
       background: #f0f0f0;
     }
-    .box {
-      text-align: center;
-      color: #555;
-    }
+    .box { text-align: center; color: #555; }
     .spinner {
       width: 40px;
       height: 40px;
@@ -48,7 +45,6 @@
     }
 
     function getRedirectUrl() {
-      // LIFF 登入後原始參數會放在 liff.state，需優先從那裡讀取
       const params = new URLSearchParams(location.search);
       let redirect = params.get("redirect");
 
@@ -89,10 +85,19 @@
         const profile = await liff.getProfile();
         const lineUid = profile.userId;
 
-        // 將 LINE UID 附加到目標網址
-        redirectUrl.searchParams.set("line_uid", lineUid);
+        // POST UID 到後端，換取一次性 token
+        const res = await fetch("/api/exchange", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: lineUid }),
+        });
 
-        // 跳轉
+        if (!res.ok) throw new Error("Exchange API error");
+
+        const { token } = await res.json();
+
+        // 網址只帶 token，不暴露 UID
+        redirectUrl.searchParams.set("uid_token", token);
         location.replace(redirectUrl.toString());
 
       } catch (err) {
